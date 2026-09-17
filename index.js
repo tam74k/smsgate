@@ -48,7 +48,7 @@ io.on('connection', (socket) => {
         console.log('New SMS received on device, forwarding to n8n:', data);
         
         // رابط n8n الخاص بك
-        const n8nWebhookUrl = 'https://n8n.101488.xyz/webhook-test/smsgateway';
+        const n8nWebhookUrl = 'https://n8n.101488.xyz/webhook/smsgateway';
         
         try {
             const response = await fetch(n8nWebhookUrl, {
