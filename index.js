@@ -44,23 +44,33 @@ io.on('connection', (socket) => {
     });
 
     // استلام الرسائل الواردة من الموبايل وتوجيهها إلى n8n
+    // استلام الرسائل الواردة من الموبايل وتوجيهها إلى Webhook العميل
     socket.on('sms_received', async (data) => {
-        console.log('New SMS received on device, forwarding to n8n:', data);
+        console.log('New SMS received on device:', data.device_code);
         
-        // رابط n8n الخاص بك
-        const n8nWebhookUrl = 'https://n8n.101488.xyz/webhook/smsgateway';
+        // استخراج رابط العميل من البيانات القادمة من الموبايل
+        const targetWebhook = data.webhook_url;
         
+        if (!targetWebhook || targetWebhook.trim() === '') {
+            console.error('No Webhook URL provided by the device', data.device_code);
+            return;
+        }
+
         try {
-            const response = await fetch(n8nWebhookUrl, {
+            const response = await fetch(targetWebhook, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data) // إرسال (device_code, sender, message)
+                body: JSON.stringify({
+                    device_code: data.device_code,
+                    sender: data.sender,
+                    message: data.message
+                })
             });
             
             if (response.ok) {
-                console.log('Successfully forwarded SMS to n8n');
+                console.log(`Successfully forwarded SMS to webhook: ${targetWebhook}`);
             } else {
                 console.error('Failed to forward to n8n. HTTP Status:', response.status);
             }
@@ -68,7 +78,6 @@ io.on('connection', (socket) => {
             console.error('Error in fetching n8n Webhook:', error.message);
         }
     });
-
     // تنظيف السجل عند انقطاع الاتصال (إغلاق التطبيق أو فقدان الإنترنت)
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
